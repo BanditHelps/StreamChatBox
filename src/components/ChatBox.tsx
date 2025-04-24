@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import youtubeIcon from '../assets/youtube32.png';
+import twitchIcon from '../assets/twitch32.png';
 import MessageContent from './MessageContent';
 import './ChatBox.css';
 
@@ -10,6 +12,7 @@ export interface Message {
   timestamp: Date;
 }
 
+// This is where all the settings for the chatbox go
 interface ChatBoxProps {
   messages: Message[];
   autoScroll?: boolean;
@@ -20,6 +23,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   autoScroll = true 
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Get the proper image based on source
+  const getSourceIcon = (source: 'youtube' | 'twitch') => {
+    switch (source) {
+      case 'youtube':
+        return youtubeIcon;
+      case 'twitch':
+        return twitchIcon;
+      default:
+        return youtubeIcon;
+    }
+  };
 
   useEffect(() => {
     if (autoScroll && messagesEndRef.current) {
@@ -34,7 +49,11 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           <div key={message.id} className={`message-item ${message.source}`}>
             <div className="message-header">
               <span className="author-name">{message.author}</span>
-              <span className="message-source">{message.source}</span>
+              <img
+                src={getSourceIcon(message.source)}
+                alt={`${message.source}`}
+                className="source-icon"
+              />              
               <span className="message-time">
                 {message.timestamp.toLocaleTimeString()}
               </span>
