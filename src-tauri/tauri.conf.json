@@ -20,9 +20,9 @@
     },
     "windows": [
       {
-        "title": "streamchatbox",
-        "width": 800,
-        "height": 600
+        "title": "Stream Chat Box",
+        "width": 500,
+        "height": 700
       }
     ],
     "security": {
