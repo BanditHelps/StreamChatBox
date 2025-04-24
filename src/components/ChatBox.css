@@ -1,0 +1,119 @@
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: rgba(30, 30, 30, 0.95);
+  color: #f1f1f1;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.message-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: 6px;
+  animation: fadeIn 0.3s ease-in;
+  max-width: 100%;
+  word-wrap: break-word;
+  margin-bottom: 4px;
+}
+
+.message-item.youtube {
+  background-color: rgba(255, 0, 0, 0.1);
+  border-left: 3px solid #ff0000;
+}
+
+.message-item.twitch {
+  background-color: rgba(145, 70, 255, 0.1);
+  border-left: 3px solid #9146ff;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+}
+
+.author-name {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.message-source {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  margin-right: 8px;
+}
+
+.youtube .message-source {
+  color: #ff0000;
+}
+
+.twitch .message-source {
+  color: #9146ff;
+}
+
+.message-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  margin-left: auto;
+}
+
+.message-content {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .message-header {
+    flex-wrap: wrap;
+  }
+  
+  .message-time {
+    width: 100%;
+    margin-top: 4px;
+    margin-left: 0;
+  }
+} 

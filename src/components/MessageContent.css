@@ -1,0 +1,11 @@
+.message-text {
+  display: inline;
+  word-break: break-word;
+}
+
+.emoji {
+  font-size: 1.2em;
+  margin: 0 0.05em;
+  vertical-align: -0.1em;
+  display: inline-block;
+} 
