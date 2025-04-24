@@ -48,12 +48,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         {messages.map((message) => (
           <div key={message.id} className={`message-item ${message.source}`}>
             <div className="message-header">
-              <span className="author-name">{message.author}</span>
               <img
                 src={getSourceIcon(message.source)}
                 alt={`${message.source}`}
                 className="source-icon"
-              />              
+              />  
+              <span className="author-name">{message.author}</span>           
               <span className="message-time">
                 {message.timestamp.toLocaleTimeString()}
               </span>

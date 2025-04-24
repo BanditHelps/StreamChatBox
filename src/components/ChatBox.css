@@ -46,13 +46,13 @@
 }
 
 .message-item.youtube {
-  background-color: rgba(255, 0, 0, 0.1);
-  border-left: 3px solid #ff0000;
+  background-color: rgba(65, 65, 65, 0.1);
+  border-left: 3px solid #3d3d3d;
 }
 
 .message-item.twitch {
-  background-color: rgba(145, 70, 255, 0.1);
-  border-left: 3px solid #9146ff;
+  background-color: rgba(65, 65, 65, 0.1);
+  border-left: 3px solid #3d3d3d;
 }
 
 .message-header {
@@ -77,11 +77,15 @@
 }
 
 .youtube .message-source {
-  color: #ff0000;
+  color: #353535;
 }
 
 .twitch .message-source {
-  color: #9146ff;
+  color: #353535;
+}
+
+.source-icon {
+  padding-right: 0.5em;
 }
 
 .message-time {
