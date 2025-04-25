@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Send } from 'lucide-react';
 import './SendMessageBox.css';
 
 export default function SendBox() {
@@ -53,6 +54,8 @@ export default function SendBox() {
           onChange={(e) => setValue(e.target.value)}
           rows={1}
         />
+        <button className="send-button"><Send/></button>
+        
       </div>
     </div>
   );
