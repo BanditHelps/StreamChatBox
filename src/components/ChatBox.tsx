@@ -54,7 +54,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 alt={`${message.source}`}
                 className="source-icon"
               />  
-              <span className="author-name">{message.author}</span>           
+              <span style={{ color: message.color }} className="author-name">{message.author}</span>           
               <span className="message-time">
                 {message.timestamp.toLocaleTimeString()}
               </span>

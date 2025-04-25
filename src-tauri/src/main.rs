@@ -3,9 +3,9 @@
 
 use tauri::{AppHandle, Manager};
 use twitch_eventsub::*;
-use tauri::async_runtime::spawn;
 use std::time::Duration;
 use std::sync::Once;
+use random_color::RandomColor;
 
 static START: Once = Once::new();
 
@@ -15,9 +15,9 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-#[tauri::command]
-fn test() -> String {
-    "Best Chatter Ever".into()
+// Return a random color hex code
+fn get_random_color() -> String {
+    return RandomColor::new().to_hex();
 }
 
 #[tauri::command]
@@ -49,12 +49,19 @@ fn start_twitch_listener(app: AppHandle) {
                         ResponseType::Event(Event::ChatMessage(md)) => {
                             println!("{} ({}): {}", md.chatter.name, md.colour, md.message.text);
 
+                            let mut color = md.colour; 
+
+                            if color == "" {
+                                // color = String::from("#ffffff");
+                                color = get_random_color();
+                            } 
+
                             let _ = app.emit_all("twitch-chat-message", serde_json::json!({
                                 "user": md.chatter.name,
-                                "color": md.colour,
+                                "color": color,
                                 "message": md.message.text,
                             }));
-                        },
+                           },
                         ResponseType::Event(Event::Follow(fd)) => {
                             println!("{} followed on Twitch!", fd.user.name);
 
