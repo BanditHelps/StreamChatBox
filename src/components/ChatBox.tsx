@@ -3,6 +3,7 @@ import youtubeIcon from '../assets/youtube32.png';
 import twitchIcon from '../assets/twitch32.png';
 import MessageContent from './MessageContent';
 import './ChatBox.css';
+import SendBox from './SendMessageBox';
 
 export interface Message {
   id: string;
@@ -66,6 +67,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
         ))}
         <div ref={messagesEndRef} />
       </div>
+      <div><SendBox/></div>
     </div>
   );
 };

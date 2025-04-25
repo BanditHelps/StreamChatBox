@@ -4,6 +4,7 @@ import ChatBox, { Message } from "./components/ChatBox";
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
 import "./App.css";
+import SendBox from "./components/SendMessageBox";
 
 // Sample messages for demonstration
 // const sampleMessages: Message[] = [
