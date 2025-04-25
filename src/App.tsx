@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ChatBox, { Message } from "./components/ChatBox";
+import { invoke } from '@tauri-apps/api/tauri';
+import { listen } from '@tauri-apps/api/event';
 import "./App.css";
 
 // Sample messages for demonstration
@@ -42,29 +44,55 @@ const sampleMessages: Message[] = [
   }
 ];
 
+
+
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
 
   // Load initial messages
   useEffect(() => {
-    setMessages(sampleMessages);
-    
-    // Simulate new messages arriving every few seconds
-    const interval = setInterval(() => {
-      const sources = ["youtube", "twitch"] as const;
+    // setMessages(sampleMessages);
+
+    invoke("start_twitch_listener");
+
+    // Listener for the twtich json messages
+    const unlistenChat = listen("twitch-chat-message", (event) => {
+      const { user, color, message } = event.payload as any;
+
       const newMessage: Message = {
         id: uuidv4(),
-        author: `User${Math.floor(Math.random() * 1000)}`,
-        source: sources[Math.floor(Math.random() * sources.length)],
-        content: `New message ${Math.floor(Math.random() * 100)} 😎 ${Math.random() > 0.5 ? "🚀" : "💯"}`,
+        author: user,
+        source: "twitch",
+        content: message,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, newMessage]);
-    }, 3000);
+    });
+
+    return () => {
+      unlistenChat.then(unlisten => unlisten());
+    };
     
-    return () => clearInterval(interval);
+    // Simulate new messages arriving every few seconds
+    // const interval = setInterval(() => {
+    //   const sources = ["youtube", "twitch"] as const;
+    //   const newMessage: Message = {
+    //     id: uuidv4(),
+    //     author: `User${Math.floor(Math.random() * 1000)}`,
+    //     source: sources[Math.floor(Math.random() * sources.length)],
+    //     content: '',
+    //     //content: `New message ${Math.floor(Math.random() * 100)} 😎 ${Math.random() > 0.5 ? "🚀" : "💯"}`,
+    //     timestamp: new Date()
+    //   };
+
+    //   invoke('test').then(message => newMessage.content = String(message))
+      
+    //   setMessages(prev => [...prev, newMessage]);
+    // }, 3000);
+    
+    // return () => clearInterval(interval);
   }, []);
 
   return (
