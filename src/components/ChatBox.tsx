@@ -10,6 +10,7 @@ export interface Message {
   source: 'youtube' | 'twitch';
   content: string;
   timestamp: Date;
+  color: string;
 }
 
 // This is where all the settings for the chatbox go
