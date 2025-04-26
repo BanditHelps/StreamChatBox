@@ -13,17 +13,28 @@
 .activities-container {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  max-height: calc(100% - 24px); /* Ensure the container doesn't grow beyond its parent */
+  max-height: calc(100% - 20px); /* Ensure the container doesn't grow beyond its parent */
+}
+
+/* When we want newest items on top */
+.activities-reversed {
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+}
+
+/* This ensures items are aligned from the bottom when reversed */
+.activities-reversed .activity-item {
+  margin-top: auto;
 }
 
 .activities-container::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .activities-container::-webkit-scrollbar-track {

@@ -13,36 +13,21 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   autoScroll = true,
   setAutoScroll
 }) => {
-  const activitiesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
-  const [isNearBottom, setIsNearBottom] = useState(true);
-
-  const checkIfNearBottom = () => {
-    if (!containerRef.current) return;
-    
-    const container = containerRef.current;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
-    // If user is within 50px of the bottom, consider them at the bottom
-    const nearBottom = distanceFromBottom < 50;
-    setIsNearBottom(nearBottom);
-    
-    if (nearBottom && userHasScrolled && setAutoScroll) {
-      setAutoScroll(true);
-      setUserHasScrolled(false);
-    }
-  };
+  const prevActivitiesLength = useRef(activities.length);
 
   const handleScroll = () => {
-    if (!autoScroll) return;
+    if (!autoScroll || !containerRef.current) return;
     
-    if (!userHasScrolled) {
+    const { scrollTop } = containerRef.current;
+    // User has scrolled away from the top
+    if (scrollTop > 0 && !userHasScrolled) {
       setUserHasScrolled(true);
+      if (setAutoScroll) {
+        setAutoScroll(false);
+      }
     }
-    
-    checkIfNearBottom();
   };
 
   useEffect(() => {
@@ -53,11 +38,25 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
     }
   }, [autoScroll, userHasScrolled]);
 
+  // Handle new activities and auto-scrolling
   useEffect(() => {
-    if (autoScroll && activitiesEndRef.current && isNearBottom) {
-      activitiesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    const container = containerRef.current;
+    if (!container) return;
+
+    // If new activities were added and auto-scroll is enabled
+    if (activities.length > prevActivitiesLength.current && autoScroll) {
+      // Save original scroll position
+      const originalScrollTop = container.scrollTop;
+      
+      // Calculate new scroll position - keep the view in the same relative position
+      // by scrolling down by the height of the new content
+      requestAnimationFrame(() => {
+        container.scrollTop = 0;
+      });
     }
-  }, [activities, autoScroll, isNearBottom]);
+
+    prevActivitiesLength.current = activities.length;
+  }, [activities, autoScroll]);
 
   return (
     <div className="activity-container">
@@ -65,10 +64,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
         className="activities-container" 
         ref={containerRef}
       >
-        {activities.map((activity) => (
+        {activities.slice().reverse().map((activity) => (
           <ActivityItem key={activity.id} activity={activity} />
         ))}
-        <div ref={activitiesEndRef} />
       </div>
     </div>
   );

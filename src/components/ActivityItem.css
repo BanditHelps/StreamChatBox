@@ -1,13 +1,51 @@
 .activity-item {
+  background-color: rgba(50, 50, 50, 0.6);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
   display: flex;
   flex-direction: column;
-  padding: 5px 8px;
-  border-radius: 6px;
-  animation: fadeIn 0.3s ease-in;
-  max-width: 100%;
-  word-wrap: break-word;
-  margin-bottom: 3px;
-  background-color: rgba(65, 65, 65, 0.1);
+  gap: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease-in-out;
+  transition: transform 0.2s ease;
+}
+
+.activity-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.activity-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.source-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.activity-message {
+  flex: 1;
+  margin-right: auto;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.activity-user-message {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background-color: rgba(30, 30, 30, 0.6);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #ddd;
+  word-break: break-word;
 }
 
 .activity-item.follow {
@@ -15,52 +53,22 @@
 }
 
 .activity-item.donation {
-  border-left: 3px solid #00b5ad;
+  border-left: 3px solid #00e701;
 }
 
 .activity-item.subscription {
-  border-left: 3px solid #f0c419;
+  border-left: 3px solid #00a0d6;
 }
 
-.activity-main {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 24px;
-}
-
-.source-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
-  flex-shrink: 0;
-}
-
-.activity-time {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.65rem;
-  margin-left: auto;
-  flex-shrink: 0;
-  padding-left: 6px;
-}
-
-.activity-message {
-  font-weight: bold;
-  color: #f1f1f1;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-grow: 1;
-}
-
-.activity-user-message {
-  color: #e0e0e0;
-  margin-top: 2px;
-  margin-left: 24px;
-  font-style: italic;
-  font-size: 0.75rem;
-  line-height: 1.2;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {

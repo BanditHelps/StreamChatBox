@@ -22,7 +22,8 @@
 /* Left dock positioning */
 .dockable-layout.left .dock-container {
   width: var(--dock-width);
-  min-width: 300px;
+  min-width: 250px;
+  max-width: 350px;
   height: 100%;
   margin-right: 10px;
   flex-shrink: 0;
@@ -37,7 +38,8 @@
 /* Right dock positioning */
 .dockable-layout.right .dock-container {
   width: var(--dock-width);
-  min-width: 300px;
+  min-width: 250px;
+  max-width: 350px;
   height: 100%;
   margin-left: 10px;
   flex-shrink: 0;
@@ -53,7 +55,8 @@
 .dockable-layout.top .dock-container {
   width: 100%;
   height: var(--dock-height);
-  min-height: 200px;
+  min-height: 150px;
+  max-height: 300px;
   margin-bottom: 10px;
   flex-shrink: 0;
 }
@@ -68,7 +71,8 @@
 .dockable-layout.bottom .dock-container {
   width: 100%;
   height: var(--dock-height);
-  min-height: 200px;
+  min-height: 150px;
+  max-height: 300px;
   margin-top: 10px;
   flex-shrink: 0;
 }

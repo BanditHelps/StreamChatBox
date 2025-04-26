@@ -16,13 +16,26 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "window": {
+        "all": false,
+        "close": true,
+        "hide": true,
+        "show": true,
+        "maximize": true,
+        "minimize": true,
+        "unmaximize": true,
+        "unminimize": true,
+        "startDragging": true,
+        "setSize": true
       }
     },
     "windows": [
       {
         "title": "Stream Chat Box",
-        "width": 500,
-        "height": 700
+        "width": 380,
+        "height": 550,
+        "resizable": true
       }
     ],
     "security": {

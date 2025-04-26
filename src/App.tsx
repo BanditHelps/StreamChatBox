@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import ChatBox, { Message } from "./components/ChatBox";
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
+import { appWindow } from '@tauri-apps/api/window';
+import { LogicalSize } from '@tauri-apps/api/window';
 import "./App.css";
 import ActivityFeed from "./components/ActivityFeed";
 import { Activity } from "./components/ActivityItem";
@@ -56,7 +58,63 @@ function App() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [dockPosition, setDockPosition] = useState<DockPosition>('right');
-  const [dockSize, setDockSize] = useState(35);
+  const [dockSize, setDockSize] = useState(30);
+  const [originalWindowSize, setOriginalWindowSize] = useState<{width: number, height: number} | null>(null);
+
+  // Store original window size and adjust window when activity feed visibility changes
+  useEffect(() => {
+    // Get and store the original window size only once
+    const getOriginalSize = async () => {
+      if (originalWindowSize === null) {
+        const size = await appWindow.outerSize();
+        setOriginalWindowSize({
+          width: size.width,
+          height: size.height
+        });
+      }
+    };
+    
+    getOriginalSize();
+  }, []);
+
+  // Handle window resizing when activity feed is shown/hidden
+  useEffect(() => {
+    const adjustWindowSize = async () => {
+      if (!originalWindowSize) return;
+      
+      if (showActivityFeed) {
+        // Calculate new size based on dock position
+        let newWidth = originalWindowSize.width;
+        let newHeight = originalWindowSize.height;
+        
+        if (dockPosition === 'left' || dockPosition === 'right') {
+          // For horizontal docks, increase width by dockSize percentage
+          // but limit the increase to maintain reasonable proportions
+          const calculatedWidth = Math.round(originalWindowSize.width * (100 / (100 - dockSize)));
+          const maxAllowedWidth = originalWindowSize.width * 1.6; // Maximum 60% increase
+          newWidth = Math.min(calculatedWidth, maxAllowedWidth);
+        } else if (dockPosition === 'top' || dockPosition === 'bottom') {
+          // For vertical docks, increase height by dockSize percentage
+          // but limit the increase to maintain reasonable proportions
+          const calculatedHeight = Math.round(originalWindowSize.height * (100 / (100 - dockSize)));
+          const maxAllowedHeight = originalWindowSize.height * 1.6; // Maximum 60% increase
+          newHeight = Math.min(calculatedHeight, maxAllowedHeight);
+        }
+        
+        await appWindow.setSize(new LogicalSize(newWidth, newHeight));
+      } else {
+        // Reset to original size
+        await appWindow.setSize(new LogicalSize(
+          originalWindowSize.width,
+          originalWindowSize.height
+        ));
+      }
+    };
+    
+    if (originalWindowSize) {
+      adjustWindowSize();
+    }
+  }, [showActivityFeed, dockPosition, dockSize, originalWindowSize]);
 
   // Load initial messages and start listeners
   useEffect(() => {
