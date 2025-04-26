@@ -3153,6 +3153,7 @@ name = "streamchatbox"
 version = "0.1.0"
 dependencies = [
  "once_cell",
+ "rand 0.8.5",
  "random_color",
  "serde",
  "serde_json",

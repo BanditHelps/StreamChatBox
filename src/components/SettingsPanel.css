@@ -1,0 +1,77 @@
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background-color: #202020;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.settings-label input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.settings-select {
+  background-color: #333;
+  color: #f1f1f1;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.settings-select:focus {
+  border-color: #555;
+}
+
+.settings-slider {
+  width: 100%;
+  appearance: none;
+  height: 6px;
+  background: #444;
+  border-radius: 3px;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #777;
+  cursor: pointer;
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #777;
+  cursor: pointer;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .settings-panel {
+    padding: 8px;
+    gap: 8px;
+  }
+} 

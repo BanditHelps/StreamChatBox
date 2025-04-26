@@ -4,7 +4,12 @@ import ChatBox, { Message } from "./components/ChatBox";
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
 import "./App.css";
-import SendBox from "./components/SendMessageBox";
+import ActivityFeed from "./components/ActivityFeed";
+import { Activity } from "./components/ActivityItem";
+import DockableLayout from "./components/DockableLayout";
+import SettingsPanel from "./components/SettingsPanel";
+
+type DockPosition = 'left' | 'right' | 'top' | 'bottom' | 'none';
 
 // Sample messages for demonstration
 // const sampleMessages: Message[] = [
@@ -45,19 +50,21 @@ import SendBox from "./components/SendMessageBox";
 //   }
 // ];
 
-
-
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [showActivityFeed, setShowActivityFeed] = useState(false);
+  const [dockPosition, setDockPosition] = useState<DockPosition>('right');
+  const [dockSize, setDockSize] = useState(30);
 
-  // Load initial messages
+  // Load initial messages and start listeners
   useEffect(() => {
-    // setMessages(sampleMessages);
-
+    // Start twitch listener and mock events
     invoke("start_twitch_listener");
+    invoke("start_mock_events");
 
-    // Listener for the twtich json messages
+    // Listen for chat messages
     const unlistenChat = listen("twitch-chat-message", (event) => {
       const { user, color, message } = event.payload as any;
 
@@ -73,48 +80,106 @@ function App() {
       setMessages(prev => [...prev, newMessage]);
     });
 
+    // Listen for follow events
+    const unlistenFollow = listen("twitch-follow", (event) => {
+      const { user } = event.payload as any;
+
+      const newActivity: Activity = {
+        id: uuidv4(),
+        type: "follow",
+        username: user,
+        source: "twitch",
+        timestamp: new Date()
+      };
+
+      // Add to activities
+      setActivities(prev => [...prev, newActivity]);
+    });
+
+    // Listen for donation events
+    const unlistenDonation = listen("twitch-donation", (event) => {
+      const { username, amount, message } = event.payload as any;
+
+      const newActivity: Activity = {
+        id: uuidv4(),
+        type: "donation",
+        username: username,
+        source: "twitch",
+        amount: amount,
+        message: message,
+        timestamp: new Date()
+      };
+
+      // Add to activities
+      setActivities(prev => [...prev, newActivity]);
+    });
+
+    // Listen for subscription events
+    const unlistenSubscription = listen("twitch-subscription", (event) => {
+      const { username, tier, is_gift } = event.payload as any;
+
+      const newActivity: Activity = {
+        id: uuidv4(),
+        type: "subscription",
+        username: username,
+        source: "twitch",
+        message: `Tier ${tier} ${is_gift ? '(gifted)' : ''}`,
+        timestamp: new Date()
+      };
+
+      // Add to activities
+      setActivities(prev => [...prev, newActivity]);
+    });
+
     return () => {
       unlistenChat.then(unlisten => unlisten());
+      unlistenFollow.then(unlisten => unlisten());
+      unlistenDonation.then(unlisten => unlisten());
+      unlistenSubscription.then(unlisten => unlisten());
     };
-    
-    // Simulate new messages arriving every few seconds
-    // const interval = setInterval(() => {
-    //   const sources = ["youtube", "twitch"] as const;
-    //   const newMessage: Message = {
-    //     id: uuidv4(),
-    //     author: `User${Math.floor(Math.random() * 1000)}`,
-    //     source: sources[Math.floor(Math.random() * sources.length)],
-    //     content: '',
-    //     //content: `New message ${Math.floor(Math.random() * 100)} 😎 ${Math.random() > 0.5 ? "🚀" : "💯"}`,
-    //     timestamp: new Date()
-    //   };
-
-    //   invoke('test').then(message => newMessage.content = String(message))
-      
-    //   setMessages(prev => [...prev, newMessage]);
-    // }, 3000);
-    
-    // return () => clearInterval(interval);
   }, []);
+
+  const chatBox = (
+    <div className="chat-wrapper">
+      <div className="chat-header">
+        <h1>Stream Chat Box</h1>
+        <SettingsPanel
+          showActivityFeed={showActivityFeed}
+          setShowActivityFeed={setShowActivityFeed}
+          dockPosition={dockPosition}
+          setDockPosition={setDockPosition}
+          dockSize={dockSize}
+          setDockSize={setDockSize}
+          autoScroll={autoScroll}
+          setAutoScroll={setAutoScroll}
+        />
+      </div>
+      <ChatBox messages={messages} autoScroll={autoScroll} />
+    </div>
+  );
+
+  const activityFeed = (
+    <div className="activity-wrapper">
+      <div className="activity-header">
+        <h2>Activity Feed</h2>
+      </div>
+      <ActivityFeed activities={activities} autoScroll={autoScroll} />
+    </div>
+  );
 
   return (
     <main className="container">
-      <div className="chat-wrapper">
-        <div className="chat-header">
-          <h1>Stream Chat Box</h1>
-          <div className="auto-scroll-toggle">
-            <label>
-              <input 
-                type="checkbox" 
-                checked={autoScroll} 
-                onChange={() => setAutoScroll(!autoScroll)} 
-              />
-              Auto-scroll
-            </label>
-          </div>
-        </div>
-        <ChatBox messages={messages} autoScroll={autoScroll} />
-      </div>
+      {showActivityFeed ? (
+        <DockableLayout
+          mainContent={chatBox}
+          dockContent={activityFeed}
+          dockPosition={dockPosition}
+          showDock={showActivityFeed}
+          dockSize={dockSize}
+        />
+      ) : (
+        chatBox
+      )}
     </main>
   );
 }

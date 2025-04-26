@@ -177,3 +177,39 @@ button {
     font-size: 1.2rem;
   }
 }
+
+.activity-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background-color: #1e1e1e;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #202020;
+  border-bottom: 1px solid #333;
+}
+
+.activity-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #f1f1f1;
+}
+
+@media (max-width: 768px) {
+  .activity-header {
+    padding: 10px 15px;
+  }
+  
+  .activity-header h2 {
+    font-size: 1.1rem;
+  }
+}

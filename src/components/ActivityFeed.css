@@ -1,0 +1,35 @@
+.activity-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: rgba(30, 30, 30, 0.95);
+  color: #f1f1f1;
+}
+
+.activities-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.activities-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.activities-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.activities-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+} 
