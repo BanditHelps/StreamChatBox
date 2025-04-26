@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import './SendMessageBox.css';
+import { invoke } from '@tauri-apps/api/tauri';
 
 export default function SendBox() {
   const [value, setValue] = useState('');
@@ -37,6 +38,26 @@ export default function SendBox() {
     adjustHeight();
   }, [value]);
 
+
+  const handleSendMessage = async () => {
+    if (value.trim() === '') return;
+
+    try {
+      await invoke('send_chat_message', { message: value });
+
+      setValue('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   // relative w-full max-w-md mx-auto h-40 send-container
 
   return (
@@ -53,8 +74,11 @@ export default function SendBox() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           rows={1}
+          onKeyDown={handleKeyDown}
         />
-        <button className="send-button"><Send/></button>
+        <button className="send-button"
+        onClick={handleSendMessage}
+        disabled={value.trim() === ''}><Send/></button>
         
       </div>
     </div>

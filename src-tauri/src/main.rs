@@ -6,8 +6,13 @@ use twitch_eventsub::*;
 use std::time::Duration;
 use std::sync::Once;
 use random_color::RandomColor;
+use std::sync::{Arc, Mutex};
+use std::collections::VecDeque;
 
 static START: Once = Once::new();
+// Message queue for chat messages
+static MESSAGE_QUEUE: once_cell::sync::Lazy<Arc<Mutex<VecDeque<String>>>> = 
+    once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(VecDeque::new())));
 
 // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -18,6 +23,18 @@ fn greet(name: &str) -> String {
 // Return a random color hex code
 fn get_random_color() -> String {
     return RandomColor::new().to_hex();
+}
+
+// New function to queue chat messages from frontend
+#[tauri::command]
+fn send_chat_message(message: String) -> Result<(), String> {
+    match MESSAGE_QUEUE.lock() {
+        Ok(mut queue) => {
+            queue.push_back(message);
+            Ok(())
+        },
+        Err(e) => Err(format!("Failed to queue message: {}", e))
+    }
 }
 
 #[tauri::command]
@@ -43,6 +60,7 @@ fn start_twitch_listener(app: AppHandle) {
             println!("Started Twitch Monitoring...");
             
             loop {
+                // Process incoming messages
                 let responses = api.receive_all_messages(Some(Duration::from_millis(1)));
                 for response in responses {
                     match response {
@@ -73,6 +91,16 @@ fn start_twitch_listener(app: AppHandle) {
                     }
                 }
 
+                // Send any queued messages
+                if let Ok(mut queue) = MESSAGE_QUEUE.lock() {
+                    while let Some(message) = queue.pop_front() {
+                        match api.send_chat_message(&message) {
+                            Ok(_) => println!("Sent chat message: {}", message),
+                            Err(e) => println!("Failed to send chat message")
+                        }
+                    }
+                }
+
                 tokio::time::sleep(Duration::from_millis(100)).await;
             }
         });
@@ -81,7 +109,7 @@ fn start_twitch_listener(app: AppHandle) {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, start_twitch_listener])
+        .invoke_handler(tauri::generate_handler![greet, start_twitch_listener, send_chat_message])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
