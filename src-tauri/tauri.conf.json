@@ -33,8 +33,8 @@
     "windows": [
       {
         "title": "Stream Chat Box",
-        "width": 380,
-        "height": 550,
+        "width": 240,
+        "height": 350,
         "resizable": true
       }
     ],
