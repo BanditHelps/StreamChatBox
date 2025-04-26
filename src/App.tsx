@@ -56,7 +56,7 @@ function App() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [showActivityFeed, setShowActivityFeed] = useState(false);
   const [dockPosition, setDockPosition] = useState<DockPosition>('right');
-  const [dockSize, setDockSize] = useState(30);
+  const [dockSize, setDockSize] = useState(35);
 
   // Load initial messages and start listeners
   useEffect(() => {

@@ -1,12 +1,12 @@
 .activity-item {
   display: flex;
   flex-direction: column;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 6px;
   animation: fadeIn 0.3s ease-in;
   max-width: 100%;
   word-wrap: break-word;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   background-color: rgba(65, 65, 65, 0.1);
 }
 
@@ -25,19 +25,19 @@
 .activity-header {
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
-  font-size: 0.85rem;
+  margin-bottom: 2px;
+  font-size: 0.8rem;
 }
 
 .activity-time {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   margin-left: auto;
 }
 
 .activity-content {
-  font-size: 0.95rem;
-  line-height: 1.4;
+  font-size: 0.85rem;
+  line-height: 1.2;
 }
 
 .activity-message {
@@ -47,8 +47,9 @@
 
 .activity-user-message {
   color: #e0e0e0;
-  margin-top: 4px;
+  margin-top: 2px;
   font-style: italic;
+  font-size: 0.8rem;
 }
 
 @media (max-width: 768px) {
@@ -58,7 +59,7 @@
   
   .activity-time {
     width: 100%;
-    margin-top: 4px;
+    margin-top: 2px;
     margin-left: 0;
   }
 } 

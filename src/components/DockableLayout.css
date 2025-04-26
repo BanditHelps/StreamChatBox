@@ -22,49 +22,61 @@
 /* Left dock positioning */
 .dockable-layout.left .dock-container {
   width: var(--dock-width);
+  min-width: 300px;
   height: 100%;
   margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .dockable-layout.left .main-container {
   width: var(--main-width);
   height: 100%;
+  flex-grow: 1;
 }
 
 /* Right dock positioning */
 .dockable-layout.right .dock-container {
   width: var(--dock-width);
+  min-width: 300px;
   height: 100%;
   margin-left: 10px;
+  flex-shrink: 0;
 }
 
 .dockable-layout.right .main-container {
   width: var(--main-width);
   height: 100%;
+  flex-grow: 1;
 }
 
 /* Top dock positioning */
 .dockable-layout.top .dock-container {
   width: 100%;
   height: var(--dock-height);
+  min-height: 200px;
   margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .dockable-layout.top .main-container {
   width: 100%;
   height: var(--main-height);
+  flex-grow: 1;
 }
 
 /* Bottom dock positioning */
 .dockable-layout.bottom .dock-container {
   width: 100%;
   height: var(--dock-height);
+  min-height: 200px;
   margin-top: 10px;
+  flex-shrink: 0;
 }
 
 .dockable-layout.bottom .main-container {
   width: 100%;
   height: var(--main-height);
+  flex-grow: 1;
 }
 
 .dock-container,

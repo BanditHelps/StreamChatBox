@@ -72,8 +72,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </label>
               <input
                 type="range"
-                min="10"
-                max="50"
+                min="20"
+                max="60"
                 value={dockSize}
                 onChange={(e) => setDockSize(parseInt(e.target.value))}
                 className="settings-slider"
