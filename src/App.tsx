@@ -7,7 +7,7 @@ import "./App.css";
 import ActivityFeed from "./components/ActivityFeed";
 import { Activity } from "./components/ActivityItem";
 import DockableLayout from "./components/DockableLayout";
-import SettingsPanel from "./components/SettingsPanel";
+import Toolbar from "./components/Toolbar";
 
 type DockPosition = 'left' | 'right' | 'top' | 'bottom' | 'none';
 
@@ -143,7 +143,7 @@ function App() {
     <div className="chat-wrapper">
       <div className="chat-header">
         <h1>Stream Chat Box</h1>
-        <SettingsPanel
+        <Toolbar
           showActivityFeed={showActivityFeed}
           setShowActivityFeed={setShowActivityFeed}
           dockPosition={dockPosition}
@@ -154,7 +154,11 @@ function App() {
           setAutoScroll={setAutoScroll}
         />
       </div>
-      <ChatBox messages={messages} autoScroll={autoScroll} />
+      <ChatBox 
+        messages={messages} 
+        autoScroll={autoScroll} 
+        setAutoScroll={setAutoScroll}
+      />
     </div>
   );
 
@@ -163,7 +167,11 @@ function App() {
       <div className="activity-header">
         <h2>Activity Feed</h2>
       </div>
-      <ActivityFeed activities={activities} autoScroll={autoScroll} />
+      <ActivityFeed 
+        activities={activities} 
+        autoScroll={autoScroll}
+        setAutoScroll={setAutoScroll}
+      />
     </div>
   );
 

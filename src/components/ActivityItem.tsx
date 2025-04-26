@@ -36,22 +36,21 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ activity }) => {
 
   return (
     <div className={`activity-item ${activity.type}`}>
-      <div className="activity-header">
+      <div className="activity-main">
         <img
           src={getActivityIcon()}
           alt={activity.source}
           className="source-icon"
         />
+        <div className="activity-message">{getActivityMessage()}</div>
         <span className="activity-time">
           {activity.timestamp.toLocaleTimeString()}
         </span>
       </div>
-      <div className="activity-content">
-        <div className="activity-message">{getActivityMessage()}</div>
-        {activity.message && (
-          <div className="activity-user-message">{activity.message}</div>
-        )}
-      </div>
+      
+      {activity.message && (
+        <div className="activity-user-message">{activity.message}</div>
+      )}
     </div>
   );
 };

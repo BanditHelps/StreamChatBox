@@ -1,0 +1,140 @@
+.toolbar {
+  display: flex;
+  position: relative;
+  align-items: center;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.toolbar-button {
+  background-color: rgba(50, 50, 50, 0.5);
+  color: #ccc;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+.toolbar-button:hover {
+  background-color: rgba(70, 70, 70, 0.8);
+  color: #fff;
+}
+
+.toolbar-button.active {
+  background-color: #4a5568;
+  color: #fff;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 260px;
+  background-color: #222;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  z-index: 10;
+  animation: fadeIn 0.2s ease;
+}
+
+.settings-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.settings-dropdown-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #eee;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  color: #fff;
+}
+
+.settings-item {
+  margin-bottom: 12px;
+}
+
+.settings-item label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: #bbb;
+}
+
+.settings-select {
+  width: 100%;
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.settings-slider {
+  width: 100%;
+  margin-top: 6px;
+  appearance: none;
+  height: 6px;
+  background: #444;
+  border-radius: 3px;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #777;
+  cursor: pointer;
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #777;
+  cursor: pointer;
+  border: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 
