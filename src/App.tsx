@@ -120,7 +120,34 @@ function App() {
   useEffect(() => {
     // Start twitch listener and mock events
     invoke("start_twitch_listener");
-    invoke("start_mock_events");
+    //invoke("start_mock_events");
+
+    // Initialize badges
+    const initBadges = async () => {
+      try {
+        // Use environment variables or hardcoded values for testing
+        // In a real app, you'd want to securely store and retrieve these values
+        const clientId = import.meta.env.VITE_TWITCH_CLIENT_ID || "";
+        const accessToken = import.meta.env.VITE_TWITCH_ACCESS_TOKEN || "";
+        const broadcasterId = import.meta.env.VITE_TWITCH_BROADCASTER_ID || "";
+        
+        if (clientId && accessToken && broadcasterId) {
+          console.log("Initializing Twitch badges...");
+          await invoke("initialize_twitch_badges", {
+            client_id: clientId,
+            access_token: accessToken,
+            broadcaster_id: broadcasterId
+          });
+          console.log("Badges initialized successfully");
+        } else {
+          console.warn("Missing Twitch API credentials for badge initialization");
+        }
+      } catch (error) {
+        console.error("Failed to initialize badges:", error);
+      }
+    };
+
+    initBadges();
 
     // Listen for chat messages
     const unlistenChat = listen("twitch-chat-message", (event) => {

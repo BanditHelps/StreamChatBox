@@ -19,10 +19,10 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, badges }) => {
       {badges && badges.length > 0 && (
         <div className="message-badges">
           {badges.map((badge, i) => (
-            <span key={i} className="badge" title={badge.id}>
+            <span key={i} className="badge" title={badge.title || badge.id}>
               <img 
-                src={`https://static-cdn.jtvnw.net/badges/v1/${badge.id}/${badge.version}/1`} 
-                alt={badge.id} 
+                src={badge.image_url || `https://static-cdn.jtvnw.net/badges/v1/${badge.id}/${badge.version}/1`} 
+                alt={badge.title || badge.id} 
                 className="badge-icon" 
               />
             </span>

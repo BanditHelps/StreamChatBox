@@ -9,6 +9,8 @@ import SendBox from './SendMessageBox';
 export interface Badge {
   id: string;
   version: string;
+  image_url?: string;
+  title?: string;
 }
 
 export interface Message {
