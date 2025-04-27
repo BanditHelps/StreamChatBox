@@ -5,6 +5,12 @@ import MessageContent from './MessageContent';
 import './ChatBox.css';
 import SendBox from './SendMessageBox';
 
+// Interface for Twitch badges
+export interface Badge {
+  id: string;
+  version: string;
+}
+
 export interface Message {
   id: string;
   author: string;
@@ -12,6 +18,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   color: string;
+  badges?: Badge[]; // Optional array of Badge objects
 }
 
 // This is where all the settings for the chatbox go
@@ -104,7 +111,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
               </span>
             </div>
             <div className="message-content">
-              <MessageContent content={message.content} />
+              <MessageContent content={message.content} badges={message.badges} />
             </div>
           </div>
         ))}

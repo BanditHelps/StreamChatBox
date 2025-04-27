@@ -9,7 +9,6 @@ use random_color::RandomColor;
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use tokio::time::sleep;
-use std::thread;
 
 static START: Once = Once::new();
 static MOCK_START: Once = Once::new();
@@ -146,6 +145,7 @@ fn start_twitch_listener(app: AppHandle) {
                                 "user": md.chatter.name,
                                 "color": color,
                                 "message": md.message.text,
+                                "badges": md.badges,
                             }));
                            },
                         ResponseType::Event(Event::Follow(fd)) => {

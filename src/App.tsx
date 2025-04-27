@@ -124,7 +124,7 @@ function App() {
 
     // Listen for chat messages
     const unlistenChat = listen("twitch-chat-message", (event) => {
-      const { user, color, message } = event.payload as any;
+      const { user, color, message, badges } = event.payload as any;
 
       const newMessage: Message = {
         id: uuidv4(),
@@ -132,7 +132,8 @@ function App() {
         source: "twitch",
         content: message,
         timestamp: new Date(),
-        color: color
+        color: color,
+        badges: badges
       };
 
       setMessages(prev => [...prev, newMessage]);
