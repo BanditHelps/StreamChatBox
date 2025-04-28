@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowDownCircle, Layout, Settings, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowDownCircle, Layout, Settings, X } from 'lucide-react';
 import './Toolbar.css';
+import SettingsPanel from './SettingsPanel';
 
 type DockPosition = 'left' | 'right' | 'top' | 'bottom' | 'none';
 
@@ -67,38 +68,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
             </button>
           </div>
           
-          {showActivityFeed && (
-            <>
-              <div className="settings-item">
-                <label>Dock Position:</label>
-                <select
-                  value={dockPosition}
-                  onChange={(e) => setDockPosition(e.target.value as DockPosition)}
-                  className="settings-select"
-                >
-                  <option value="none">Disabled</option>
-                  <option value="left">Left</option>
-                  <option value="right">Right</option>
-                  <option value="top">Top</option>
-                  <option value="bottom">Bottom</option>
-                </select>
-              </div>
-
-              {dockPosition !== 'none' && (
-                <div className="settings-item">
-                  <label>Dock Size: {dockSize}%</label>
-                  <input
-                    type="range"
-                    min="20"
-                    max="60"
-                    value={dockSize}
-                    onChange={(e) => setDockSize(parseInt(e.target.value))}
-                    className="settings-slider"
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <SettingsPanel 
+            showActivityFeed={showActivityFeed}
+            setShowActivityFeed={setShowActivityFeed}
+            dockPosition={dockPosition}
+            setDockPosition={setDockPosition}
+            dockSize={dockSize}
+            setDockSize={setDockSize}
+            autoScroll={autoScroll}
+            setAutoScroll={setAutoScroll}
+          />
         </div>
       )}
     </div>

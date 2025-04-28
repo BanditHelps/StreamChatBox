@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './SettingsPanel.css';
+import APIKeysWindow from './APIKeysWindow';
 
 type DockPosition = 'left' | 'right' | 'top' | 'bottom' | 'none';
 
@@ -24,6 +25,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   autoScroll,
   setAutoScroll,
 }) => {
+  const [showApiKeysWindow, setShowApiKeysWindow] = useState(false);
+
+  const openApiKeysWindow = () => {
+    setShowApiKeysWindow(true);
+  };
+
+  const closeApiKeysWindow = () => {
+    setShowApiKeysWindow(false);
+  };
+
   return (
     <div className="settings-panel">
       <div className="settings-section">
@@ -81,6 +92,24 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           )}
         </>
+      )}
+
+      <div className="settings-section api-keys-section">
+        <button 
+          className="api-keys-button"
+          onClick={openApiKeysWindow}
+        >
+          Configure API Keys
+        </button>
+      </div>
+
+      {showApiKeysWindow && (
+        <div className="modal-overlay" onClick={closeApiKeysWindow}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal" onClick={closeApiKeysWindow}>×</button>
+            <APIKeysWindow />
+          </div>
+        </div>
       )}
     </div>
   );

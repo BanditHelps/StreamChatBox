@@ -10,6 +10,10 @@ use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use tokio::time::sleep;
 use std::env;
+use std::fs;
+use std::io::Write;
+use std::path::PathBuf;
+use std::io::{BufRead, BufReader};
 
 // Add the badges module
 mod badges;
@@ -318,6 +322,103 @@ async fn initialize_badges_from_env_internal() -> Result<(), String> {
     badges::initialize_badges(&client_id, &access_token, &broadcaster_id).await
 }
 
+// Command to save API keys to a secure file
+#[tauri::command]
+fn save_api_keys(
+    app_handle: tauri::AppHandle,
+    twitch_client_id: String,
+    twitch_client_secret: String,
+    twitch_broadcaster_id: String,
+    youtube_channel_id: String,
+    youtube_api_key: String,
+) -> Result<(), String> {
+    let contents = format!(
+        "TWITCH_CLIENT_ID={}\nTWITCH_CLIENT_SECRET={}\nTWITCH_BROADCASTER_ID={}\nYOUTUBE_CHANNEL_ID={}\nYOUTUBE_API_KEY={}",
+        twitch_client_id, twitch_client_secret, twitch_broadcaster_id, youtube_channel_id, youtube_api_key
+    );
+    
+    // Use the app's resource path for better security
+    let resource_path = app_handle.path_resolver().app_config_dir()
+        .ok_or_else(|| "Could not find config directory".to_string())?;
+    
+    // Create directory if it doesn't exist
+    match fs::create_dir_all(&resource_path) {
+        Ok(_) => {},
+        Err(e) => return Err(format!("Failed to create config directory: {}", e))
+    }
+    
+    let secrets_path = resource_path.join(".secrets.env");
+    
+    match fs::write(&secrets_path, contents) {
+        Ok(_) => {
+            // Also write to current directory for compatibility with existing code
+            // match fs::write("./.secrets.env", contents) {
+            //     Ok(_) => Ok(()),
+            //     Err(e) => Err(format!("Failed to save API keys to current directory: {}", e))
+            // }
+            println!("Saved API keys to {}", secrets_path.display());
+            Ok(())
+        },
+        Err(e) => Err(format!("Failed to save API keys: {}", e))
+    }
+}
+
+// Command to read API keys from the secure file
+#[tauri::command]
+fn read_api_keys(app_handle: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    // Try app config directory first
+    let resource_path = app_handle.path_resolver().app_config_dir()
+        .ok_or_else(|| "Could not find config directory".to_string())?;
+    
+    let secrets_path = resource_path.join(".secrets.env");
+    
+    let path = if secrets_path.exists() {
+        secrets_path
+    } else {
+        // Fallback to current directory
+        PathBuf::from("./.secrets.env")
+    };
+    
+    if !path.exists() {
+        return Ok(serde_json::json!({
+            "TWITCH_CLIENT_ID": "",
+            "TWITCH_CLIENT_SECRET": "",
+            "TWITCH_BROADCASTER_ID": "",
+            "YOUTUBE_CHANNEL_ID": "",
+            "YOUTUBE_API_KEY": ""
+        }));
+    }
+    
+    let file = match fs::File::open(&path) {
+        Ok(file) => file,
+        Err(e) => return Err(format!("Failed to open secrets file: {}", e))
+    };
+    
+    let reader = BufReader::new(file);
+    let mut api_keys = serde_json::json!({
+        "TWITCH_CLIENT_ID": "",
+        "TWITCH_CLIENT_SECRET": "",
+        "TWITCH_BROADCASTER_ID": "",
+        "YOUTUBE_CHANNEL_ID": "",
+        "YOUTUBE_API_KEY": ""
+    });
+    
+    for line in reader.lines() {
+        let line = match line {
+            Ok(line) => line,
+            Err(e) => return Err(format!("Failed to read line: {}", e))
+        };
+        
+        if let Some((key, value)) = line.split_once('=') {
+            if !value.is_empty() {
+                api_keys[key] = serde_json::Value::String(value.to_string());
+            }
+        }
+    }
+    
+    Ok(api_keys)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -326,7 +427,9 @@ fn main() {
             send_chat_message,
             start_mock_events,
             initialize_twitch_badges,
-            initialize_badges_from_env
+            initialize_badges_from_env,
+            save_api_keys,
+            read_api_keys,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

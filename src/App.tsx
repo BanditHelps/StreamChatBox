@@ -120,7 +120,7 @@ function App() {
   useEffect(() => {
     // Start twitch listener and mock events
     invoke("start_twitch_listener");
-    //invoke("start_mock_events");
+    invoke("start_mock_events");
 
     // Initialize badges
     const initBadges = async () => {
