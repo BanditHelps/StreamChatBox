@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use tokio::time::sleep;
 use std::{env, fs, error::Error};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use std::path::PathBuf;
 use std::io::{BufRead, BufReader};
@@ -24,7 +24,10 @@ static START: Once = Once::new();
 static MOCK_START: Once = Once::new();
 static YOUTUBE_START: Once = Once::new();
 // Message queue for chat messages
-static MESSAGE_QUEUE: once_cell::sync::Lazy<Arc<Mutex<VecDeque<String>>>> = 
+static TWITCH_MESSAGE_QUEUE: once_cell::sync::Lazy<Arc<Mutex<VecDeque<String>>>> = 
+    once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(VecDeque::new())));
+
+static YOUTUBE_MESSAGE_QUEUE: once_cell::sync::Lazy<Arc<Mutex<VecDeque<String>>>> = 
     once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(VecDeque::new())));
 
 // Data Structures for response from APIs
@@ -100,6 +103,25 @@ struct LiveStreamingDetails {
     active_live_chat_id: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct SendMessageRequest {
+    snippet: Snippet,
+}
+
+#[derive(Debug, Serialize)]
+struct Snippet {
+    liveChatId: String,
+    #[serde(rename = "type")]
+    type_field: String,  // `type` is a Rust keyword, so we rename it
+    textMessageDetails: TextMessageDetails,
+}
+
+#[derive(Debug, Serialize)]
+struct TextMessageDetails {
+    messageText: String,
+}
+
+
 
 
 async fn get_live_video_id(client: &Client, channel_id: &str, api_key: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
@@ -151,6 +173,36 @@ async fn get_live_chat_id(client: &Client, video_id: &str, api_key: &str) -> Res
     }
 }
 
+async fn youtube_send_chat(client: &Client, video_id: &str, message: &str) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
+    let url = format!(
+        "https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet"
+    );
+
+    println!("YouTube chat URL: {}", url);
+
+    let request = SendMessageRequest {
+        snippet: Snippet {
+            liveChatId: video_id.to_string(),
+            type_field: "textMessageEvent".to_string(),
+            textMessageDetails: TextMessageDetails {
+                messageText: message.to_string(),
+            },
+        },
+    };
+
+    println!("YouTube chat request: {:?}", request);
+
+    let response = client.get(&url)
+        .json(&request)
+        .send()
+        .await?;
+
+    // Rprint the response to see if it is bad
+    println!("YouTube chat response: {:?}", response);
+    Ok(response)
+
+}
+
 
 async fn fetch_chat_messages(
     client: &Client, 
@@ -199,13 +251,19 @@ fn get_random_color() -> String {
 // New function to queue chat messages from frontend
 #[tauri::command]
 fn send_chat_message(message: String) -> Result<(), String> {
-    match MESSAGE_QUEUE.lock() {
-        Ok(mut queue) => {
-            queue.push_back(message);
-            Ok(())
-        },
-        Err(e) => Err(format!("Failed to queue message: {}", e))
+    {
+        let mut twitch_queue = TWITCH_MESSAGE_QUEUE.lock()
+            .map_err(|e| format!("Failed to lock Twitch queue: {}", e))?;
+        twitch_queue.push_back(message.clone());
     }
+
+    {
+        let mut youtube_queue = YOUTUBE_MESSAGE_QUEUE.lock()
+            .map_err(|e| format!("Failed to lock YouTube queue: {}", e))?;
+        youtube_queue.push_back(message);
+    }
+
+    Ok(())
 }
 
 // Command to initialize badges
@@ -300,7 +358,9 @@ fn start_mock_events(app: AppHandle) {
 
 #[tauri::command]
 fn start_youtube_listener(app: AppHandle) {
-    YOUTUBE_START.call_once(|| {
+    let app_clone = app.clone();
+    YOUTUBE_START.call_once(move || {
+        let app_clone2 = app_clone.clone();
         tauri::async_runtime::spawn(async move {
             simple_env_load::load_env_from([".secrets.env"]);
 
@@ -327,92 +387,97 @@ fn start_youtube_listener(app: AppHandle) {
             println!("{}", "Starting YouTube Listener".red().bold());
 
             let client = Client::new();
-            let video_id = get_live_video_id(&client, &youtube_channel_id, &youtube_api_key).await;
-            let chat_id = get_live_chat_id(&client, &video_id.unwrap(), &youtube_api_key).await;
-
-            let mut next_token: Option<String> = None;
-
-            println!("{}", "YouTube Setup successfull".red());
             
-            let unwrapped_chat_id = match chat_id {
-                Ok(val) => val,
-                Err(e) => {
-                    // Bad response
-                    println!("Got no response back!");
-                    // might have to put in a sleep here
-                    return;
-                }
-            };
-            
-            loop {
-                let response = fetch_chat_messages(
-                    &client, 
-                    &unwrapped_chat_id, 
-                    &youtube_api_key, 
-                    next_token.as_deref()
-                ).await;
-
-                let unwrapped_resp = match response {
-                    Ok(val) => val,
-                    Err(e) => {
-                        // Bad response
-                        println!("Got no response back!");
-                        // might have to put in a sleep here
-                        return;
-                    }
-                };
-
-                if unwrapped_resp.items.is_none() {
-                    println!("{}", "No chat detected. Continuing".red());
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                    continue;
-                }
-                
-                
-                for message in &unwrapped_resp.items.unwrap() {
-                    let timestamp = match format_timestamp(&message.snippet.published_at) {
-                        Ok(ts) => ts,
-                        Err(_) => "??:??:??".to_string()
-                    };
-                    
-                    let username = if message.author_details.is_owner.unwrap_or(false) {
-                        message.author_details.display_name.red().bold()
-                    } else if message.author_details.is_moderator.unwrap_or(false) {
-                        message.author_details.display_name.blue().bold()
-                    } else if message.author_details.is_sponsor.unwrap_or(false) {
-                        message.author_details.display_name.green().bold()
-                    } else {
-                        message.author_details.display_name.yellow()
-                    };
-                    
-                    println!("[{}] {}: {}", 
-                        timestamp.bright_black(), 
-                        username, 
-                        message.snippet.display_message);
-
-                    let _ = app.emit_all("youtube-chat-message", serde_json::json!({
-                        "user": message.author_details.display_name,
-                        "color": get_random_color(),
-                        "message": message.snippet.display_message,
-                        "timestamp": timestamp
-                    }));
-                }
-        
-                if unwrapped_resp.polling_interval_millis.is_some() {
-                    next_token = Some(unwrapped_resp.next_page_token.unwrap().to_string());
-                }
-                
-                if unwrapped_resp.polling_interval_millis.is_some() {
-                    // Wait for the recommended polling interval before making the next request
-                    tokio::time::sleep(Duration::from_millis(unwrapped_resp.polling_interval_millis.unwrap())).await;
-                } else {
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                } 
+            match async_youtube_listener(client, youtube_channel_id, youtube_api_key, app_clone2).await {
+                Ok(_) => println!("YouTube listener finished successfully"),
+                Err(e) => println!("YouTube listener error: {}", e),
             }
-
-
         });
     });
+}
+
+// Separate async function to handle all the YouTube listener logic
+async fn async_youtube_listener(
+    client: Client,
+    youtube_channel_id: String,
+    youtube_api_key: String,
+    app: AppHandle,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let video_id = get_live_video_id(&client, &youtube_channel_id, &youtube_api_key).await?;
+    let chat_id = get_live_chat_id(&client, &video_id, &youtube_api_key).await?;
+
+    let mut next_token: Option<String> = None;
+
+    println!("{}", "YouTube Setup successful".red());
+    
+    loop {
+        let response = fetch_chat_messages(
+            &client, 
+            &chat_id, 
+            &youtube_api_key, 
+            next_token.as_deref()
+        ).await?;
+
+        if response.items.is_none() {
+            println!("{}", "No chat detected. Continuing".red());
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            continue;
+        }
+        
+        for message in &response.items.unwrap() {
+            let timestamp = match format_timestamp(&message.snippet.published_at) {
+                Ok(ts) => ts,
+                Err(_) => "??:??:??".to_string()
+            };
+            
+            let username = if message.author_details.is_owner.unwrap_or(false) {
+                message.author_details.display_name.red().bold()
+            } else if message.author_details.is_moderator.unwrap_or(false) {
+                message.author_details.display_name.blue().bold()
+            } else if message.author_details.is_sponsor.unwrap_or(false) {
+                message.author_details.display_name.green().bold()
+            } else {
+                message.author_details.display_name.yellow()
+            };
+            
+            println!("[{}] {}: {}", 
+                timestamp.bright_black(), 
+                username, 
+                message.snippet.display_message);
+
+            let _ = app.emit_all("youtube-chat-message", serde_json::json!({
+                "user": message.author_details.display_name,
+                "color": get_random_color(),
+                "message": message.snippet.display_message,
+                "timestamp": timestamp
+            }));
+        }
+
+        if response.polling_interval_millis.is_some() {
+            next_token = response.next_page_token.clone();
+        }
+
+        // Process outgoing messages
+        let messages = {
+            let mut queue = YOUTUBE_MESSAGE_QUEUE.lock().unwrap();
+            let msgs = queue.drain(..).collect::<Vec<_>>();
+            msgs // Return msgs outside of the lock scope
+        };
+        
+        // Process each message after the lock is released
+        for message in messages {
+            match youtube_send_chat(&client, &video_id, &message).await {
+                Ok(_) => println!("Sent YouTube chat message: {}", message),
+                Err(e) => println!("Failed to send YouTube chat message: {}", e)
+            }
+        }
+        
+        if response.polling_interval_millis.is_some() {
+            tokio::time::sleep(Duration::from_millis(response.polling_interval_millis.unwrap())).await;
+        } else {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        } 
+    }
 }
 
 #[tauri::command]
@@ -487,7 +552,7 @@ fn start_twitch_listener(app: AppHandle) {
                 }
 
                 // Send any queued messages
-                if let Ok(mut queue) = MESSAGE_QUEUE.lock() {
+                if let Ok(mut queue) = TWITCH_MESSAGE_QUEUE.lock() {
                     while let Some(message) = queue.pop_front() {
                         match api.send_chat_message(&message) {
                             Ok(_) => println!("Sent chat message: {}", message),
