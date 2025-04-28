@@ -9,20 +9,181 @@ use random_color::RandomColor;
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use tokio::time::sleep;
-use std::env;
-use std::fs;
-use std::io::Write;
+use std::{env, fs, error::Error};
+use serde::Deserialize;
+use reqwest::Client;
 use std::path::PathBuf;
 use std::io::{BufRead, BufReader};
+use colored::Colorize;
+use chrono::{DateTime, Local};
 
 // Add the badges module
 mod badges;
 
 static START: Once = Once::new();
 static MOCK_START: Once = Once::new();
+static YOUTUBE_START: Once = Once::new();
 // Message queue for chat messages
 static MESSAGE_QUEUE: once_cell::sync::Lazy<Arc<Mutex<VecDeque<String>>>> = 
     once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(VecDeque::new())));
+
+// Data Structures for response from APIs
+// YouTube API response structures
+#[derive(Debug, Deserialize)]
+struct LiveChatResponse {
+    items: Option<Vec<ChatMessage>>,
+    #[serde(rename = "nextPageToken")]
+    next_page_token: Option<String>,
+    #[serde(rename = "pollingIntervalMillis")]
+    polling_interval_millis: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChatMessage {
+    #[serde(rename = "snippet")]
+    snippet: MessageSnippet,
+    #[serde(rename = "authorDetails")]
+    author_details: AuthorDetails,
+}
+
+#[derive(Debug, Deserialize)]
+struct MessageSnippet {
+    #[serde(rename = "displayMessage")]
+    display_message: String,
+    #[serde(rename = "publishedAt")]
+    published_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct AuthorDetails {
+    #[serde(rename = "displayName")]
+    display_name: String,
+    #[serde(rename = "isChatOwner")]
+    is_owner: Option<bool>,
+    #[serde(rename = "isChatModerator")]
+    is_moderator: Option<bool>,
+    #[serde(rename = "isChatSponsor")]
+    is_sponsor: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SearchResponse {
+    items: Vec<SearchItem>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SearchItem {
+    #[serde(rename = "id")]
+    id: SearchItemId,
+}
+
+#[derive(Debug, Deserialize)]
+struct SearchItemId {
+    #[serde(rename = "videoId")]
+    video_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct LiveVideoResponse {
+    items: Vec<LiveVideoItem>,
+}
+
+#[derive(Debug, Deserialize)]
+struct LiveVideoItem {
+    #[serde(rename = "liveStreamingDetails")]
+    live_streaming_details: Option<LiveStreamingDetails>,
+}
+
+#[derive(Debug, Deserialize)]
+struct LiveStreamingDetails {
+    #[serde(rename = "activeLiveChatId")]
+    active_live_chat_id: Option<String>,
+}
+
+
+
+async fn get_live_video_id(client: &Client, channel_id: &str, api_key: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let search_url = format!(
+        "https://www.googleapis.com/youtube/v3/search?part=id&eventType=live&type=video&channelId={}&key={}",
+        channel_id, api_key
+    );
+    
+    let search_response = client.get(&search_url)
+        .send()
+        .await?
+        .json::<SearchResponse>()
+        .await?;
+    
+    if search_response.items.is_empty() {
+        return Err("No live streams found for this channel".into());
+    }
+    
+    match &search_response.items[0].id.video_id {
+        Some(video_id) => Ok(video_id.clone()),
+        None => Err("Could not find video ID in the search response".into()),
+    }
+}
+
+async fn get_live_chat_id(client: &Client, video_id: &str, api_key: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let video_url = format!(
+        "https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id={}&key={}",
+        video_id, api_key
+    );
+    
+    let video_response = client.get(&video_url)
+        .send()
+        .await?
+        .json::<LiveVideoResponse>()
+        .await?;
+    
+    if video_response.items.is_empty() {
+        return Err("No video details found".into());
+    }
+    
+    match &video_response.items[0].live_streaming_details {
+        Some(details) => {
+            match &details.active_live_chat_id {
+                Some(chat_id) => Ok(chat_id.clone()),
+                None => Err("No active live chat found for this video".into()),
+            }
+        },
+        None => Err("No live streaming details found for this video".into()),
+    }
+}
+
+
+async fn fetch_chat_messages(
+    client: &Client, 
+    chat_id: &str, 
+    api_key: &str, 
+    next_page_token: Option<&str>
+) -> Result<LiveChatResponse, Box<dyn std::error::Error + Send + Sync>> {
+    let mut url = format!(
+        "https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId={}&part=snippet,authorDetails&key={}",
+        chat_id, api_key
+    );
+    
+    if let Some(token) = next_page_token {
+        url.push_str(&format!("&pageToken={}", token));
+    }
+    
+    let response = client.get(&url)
+        .send()
+        .await?
+        .json::<LiveChatResponse>()
+        .await?;
+
+
+    Ok(response)
+}
+
+fn format_timestamp(timestamp_str: &str) -> Result<String, Box<dyn Error>> {
+    let timestamp = DateTime::parse_from_rfc3339(timestamp_str)?;
+    // let timestamp_utc: DateTime<Utc> = timestamp.into();
+    let timestamp_local = timestamp.with_timezone(&Local);
+    Ok(timestamp_local.format("%H:%M:%S").to_string())
+}
+
 
 // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -133,6 +294,123 @@ fn start_mock_events(app: AppHandle) {
                     }
                 }
             }
+        });
+    });
+}
+
+#[tauri::command]
+fn start_youtube_listener(app: AppHandle) {
+    YOUTUBE_START.call_once(|| {
+        tauri::async_runtime::spawn(async move {
+            simple_env_load::load_env_from([".secrets.env"]);
+
+            fn get(key: &str) -> Result<String, String> {
+                std::env::var(key).map_err(|_| format!("please set {key} in .example.env"))
+            }
+
+            let youtube_channel_id = match get("YOUTUBE_CHANNEL_ID") {
+                Ok(s) => s,
+                Err(e) => {
+                    error!("{}", e);
+                    String::from("default")
+                }
+            };
+
+            let youtube_api_key = match get("YOUTUBE_API_KEY") {
+                Ok(s) => s,
+                Err(e) => {
+                    error!("{}", e);
+                    String::from("default")
+                }
+            };
+
+            println!("{}", "Starting YouTube Listener".red().bold());
+
+            let client = Client::new();
+            let video_id = get_live_video_id(&client, &youtube_channel_id, &youtube_api_key).await;
+            let chat_id = get_live_chat_id(&client, &video_id.unwrap(), &youtube_api_key).await;
+
+            let mut next_token: Option<String> = None;
+
+            println!("{}", "YouTube Setup successfull".red());
+            
+            let unwrapped_chat_id = match chat_id {
+                Ok(val) => val,
+                Err(e) => {
+                    // Bad response
+                    println!("Got no response back!");
+                    // might have to put in a sleep here
+                    return;
+                }
+            };
+            
+            loop {
+                let response = fetch_chat_messages(
+                    &client, 
+                    &unwrapped_chat_id, 
+                    &youtube_api_key, 
+                    next_token.as_deref()
+                ).await;
+
+                let unwrapped_resp = match response {
+                    Ok(val) => val,
+                    Err(e) => {
+                        // Bad response
+                        println!("Got no response back!");
+                        // might have to put in a sleep here
+                        return;
+                    }
+                };
+
+                if unwrapped_resp.items.is_none() {
+                    println!("{}", "No chat detected. Continuing".red());
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+                
+                
+                for message in &unwrapped_resp.items.unwrap() {
+                    let timestamp = match format_timestamp(&message.snippet.published_at) {
+                        Ok(ts) => ts,
+                        Err(_) => "??:??:??".to_string()
+                    };
+                    
+                    let username = if message.author_details.is_owner.unwrap_or(false) {
+                        message.author_details.display_name.red().bold()
+                    } else if message.author_details.is_moderator.unwrap_or(false) {
+                        message.author_details.display_name.blue().bold()
+                    } else if message.author_details.is_sponsor.unwrap_or(false) {
+                        message.author_details.display_name.green().bold()
+                    } else {
+                        message.author_details.display_name.yellow()
+                    };
+                    
+                    println!("[{}] {}: {}", 
+                        timestamp.bright_black(), 
+                        username, 
+                        message.snippet.display_message);
+
+                    let _ = app.emit_all("youtube-chat-message", serde_json::json!({
+                        "user": message.author_details.display_name,
+                        "color": get_random_color(),
+                        "message": message.snippet.display_message,
+                        "timestamp": timestamp
+                    }));
+                }
+        
+                if unwrapped_resp.polling_interval_millis.is_some() {
+                    next_token = Some(unwrapped_resp.next_page_token.unwrap().to_string());
+                }
+                
+                if unwrapped_resp.polling_interval_millis.is_some() {
+                    // Wait for the recommended polling interval before making the next request
+                    tokio::time::sleep(Duration::from_millis(unwrapped_resp.polling_interval_millis.unwrap())).await;
+                } else {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                } 
+            }
+
+
         });
     });
 }
@@ -430,6 +708,7 @@ fn main() {
             initialize_badges_from_env,
             save_api_keys,
             read_api_keys,
+            start_youtube_listener,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

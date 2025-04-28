@@ -120,6 +120,7 @@ function App() {
   useEffect(() => {
     // Start twitch listener and mock events
     invoke("start_twitch_listener");
+    invoke("start_youtube_listener");
     invoke("start_mock_events");
 
     // Initialize badges
@@ -161,6 +162,22 @@ function App() {
         timestamp: new Date(),
         color: color,
         badges: badges
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+    });
+
+    // Listen for youtube chat messages
+    const unlistenYoutubeChat = listen("youtube-chat-message", (event) => {
+      const { user, color, message, timestamp } = event.payload as any;
+
+      const newMessage: Message = {
+        id: uuidv4(),
+        author: user,
+        source: "youtube",
+        content: message,
+        timestamp: new Date(),
+        color: color
       };
 
       setMessages(prev => [...prev, newMessage]);
@@ -219,6 +236,7 @@ function App() {
 
     return () => {
       unlistenChat.then(unlisten => unlisten());
+      unlistenYoutubeChat.then(unlisten => unlisten());
       unlistenFollow.then(unlisten => unlisten());
       unlistenDonation.then(unlisten => unlisten());
       unlistenSubscription.then(unlisten => unlisten());
